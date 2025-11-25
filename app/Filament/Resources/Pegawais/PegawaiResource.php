@@ -18,6 +18,7 @@ class PegawaiResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-user';
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
+    protected static ?string $navigationLabel = 'Pegawai';
 
     public static function form(Schema $schema): Schema
     {
@@ -33,14 +34,13 @@ class PegawaiResource extends Resource
                     ->label('Nama Lengkap')
                     ->required(),
 
-                Forms\Components\Select::make('jabatan')
+                // Di dalam public static function form(Schema $schema): Schema
+                Forms\Components\Select::make('jabatan_id')
                     ->label('Jabatan')
-                    ->options([
-                        'Manajer' => 'Manajer',
-                        'Staff' => 'Staff',
-                        'HRD' => 'HRD',
-                    ])
-                    ->required(),
+                    ->relationship('jabatan', 'nama_jabatan')  // Mengambil dari model Jabatan, menampilkan nama_jabatan
+                    ->required()
+                    ->preload()  // Memuat opsi saat form dibuka (lebih cepat)
+                    ->searchable(),  // Opsional: Tambah pencarian jika jabatan banyak
 
                 Forms\Components\Radio::make('gender')
                     ->label('Jenis Kelamin')

@@ -24,6 +24,8 @@ class CoaResource extends Resource
 
     protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-rectangle-stack';
 
+    protected static ?string $navigationLabel = 'Chart of Account';
+
     protected static UnitEnum|string|null $navigationGroup = 'Master Data';
 
     public static function form(Schema $schema): Schema  // Corrected
