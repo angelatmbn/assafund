@@ -15,8 +15,9 @@ return new class extends Migration
             $table->id();
             $table->integer("nip");
             $table->string("nama");
-            $table->string("jabatan");
+            $table->string("jabatan_id");
             $table->string("gender");
+            $table->string("gaji_pokok");
             $table->timestamps();
         });
     }

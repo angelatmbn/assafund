@@ -15,6 +15,10 @@ use Filament\Forms\Components\Grid;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select; 
+use Filament\Forms\Get;
+use Filament\Forms\Set;
+use App\Models\KomponenBiayaDaftar;
+use Filament\Forms\Components\Repeater;
 
 class PendaftaranResource extends Resource
 {
@@ -24,49 +28,69 @@ class PendaftaranResource extends Resource
     protected static UnitEnum|string|null $navigationGroup = 'Transaksi';
     protected static ?string $navigationLabel = 'Pendaftaran';
 
-    public static function form(Schema $schema): Schema
-    {
-        return $schema
-                            ->schema([
-                                // KIRI
-                                Select::make('siswa_id')  // Gunakan foreign key, bukan 'siswa'
-                                    ->label('Siswa')
-                                    ->relationship('siswa', 'nama_lengkap')  // 'siswa' adalah nama relasi, 'nama' adalah field di tabel siswa
-                                    ->required()
-                                    ->searchable()  // Opsional: Membuat dropdown searchable
-                                    ->preload(),    // Opsional: Memuat data awal untuk performa
+public static function form(Schema $schema): Schema
+{
+    return $schema
+        ->schema([
+            Repeater::make('items')
+                ->label('Daftar Pendaftaran')
+                ->columnSpan('full')   // kalau dibungkus Grid/Section
+                ->columns(1)           // satu kolom per baris
+                ->schema([
+                    Select::make('siswa')
+                        ->label('Siswa')
+                        ->relationship('siswa', 'nama_lengkap')
+                        ->required()
+                        ->searchable()
+                        ->preload(),
 
-                                // KANAN
-                                TextInput::make('nominal')
-                                    ->label('Nominal')
-                                    ->numeric()
-                                    ->required(),
+                    Select::make('komponen_biaya')
+                        ->label('Komponen Biaya')
+                        ->options(
+                            KomponenBiayaDaftar::pluck('nama_komponen', 'id_komponen')->toArray()
+                        )
+                        ->required()
+                        ->live()
+                        ->afterStateUpdated(function ($state, callable $set) {
+                            $nominal = KomponenBiayaDaftar::where('id_komponen', $state)->value('nominal');
+                            $set('nominal', $nominal ?? 0);
+                        }),
 
-                                // KIRI
-                                TextInput::make('jumlah_bayar')
-                                    ->label('Jumlah Bayar')
-                                    ->numeric()
-                                    ->required(),
+                    TextInput::make('nominal')
+                        ->label('Nominal')
+                        ->numeric()
+                        ->prefix('Rp')
+                        ->disabled()
+                        ->dehydrated(true),     // tapi nilainya tetap dikirim ke array $data['items'],
+                    
+                    DatePicker::make('tanggal')
+                        ->label('Tanggal')
+                        ->required(),
 
-                                // KANAN
-                                DatePicker::make('tanggal')
-                                    ->label('Tanggal')
-                                    ->required(),
-
-                                // FULL ROW (kiri)
-                                TextInput::make('kelas')
-                                    ->label('Kelas')
-                                    ->required(),
-                            ]);
-    }
+                    TextInput::make('kelas')
+                        ->label('Kelas')
+                        ->required(),
+                ])
+                ->columns(2)
+                ->minItems(1),
+        ]);
+}
 
     public static function table(Tables\Table $table): Tables\Table
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('siswa')->label('Siswa')->searchable(),
-                Tables\Columns\TextColumn::make('nominal')->label('Nominal'),
-                Tables\Columns\TextColumn::make('jumlah_bayar')->label('Jumlah Bayar'),
+                Tables\Columns\TextColumn::make('siswa.nama_lengkap')
+                    ->label('Siswa')
+                    ->searchable(),
+
+                Tables\Columns\TextColumn::make('KomponenBiayaDaftar.nama_komponen')
+                    ->label('Komponen Biaya'),
+
+                Tables\Columns\TextColumn::make('KomponenBiayaDaftar.nominal')
+                    ->label('Nominal')
+                    ->money('IDR'),
+
                 Tables\Columns\TextColumn::make('kelas')->label('Kelas'),
                 Tables\Columns\TextColumn::make('tanggal')->label('Tanggal')->date(),
             ]);

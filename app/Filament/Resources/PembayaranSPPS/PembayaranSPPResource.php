@@ -70,7 +70,8 @@ class PembayaranSPPResource extends Resource
                                 ->label('Biaya Pokok SPP')
                                 ->numeric()
                                 ->required()
-                                ->columnSpanFull(),
+                                ->columnSpanFull()
+                                ->prefix('Rp'),  // Opsional: Tambah prefix untuk mata uang
                                 ]);
     }
 
@@ -82,7 +83,7 @@ class PembayaranSPPResource extends Resource
                 TextColumn::make('bulan')->label('Bulan'),
                 TextColumn::make('tahun')->label('Tahun'),
                 TextColumn::make('tanggal_bayar')->label('Tanggal Bayar')->date(),
-                TextColumn::make('biaya_pokok')->label('Biaya Pokok'),
+                TextColumn::make('biaya_pokok')->label('Biaya Pokok')->money('IDR'),
             ]);
     }
 

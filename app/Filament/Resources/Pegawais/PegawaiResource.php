@@ -4,7 +4,6 @@ namespace App\Filament\Resources\Pegawais;
 
 use UnitEnum;
 use BackedEnum;
-
 use App\Filament\Resources\Pegawais\Pages;
 use App\Models\Pegawai;
 use Filament\Forms;
@@ -40,8 +39,12 @@ class PegawaiResource extends Resource
                     ->relationship('jabatan', 'nama_jabatan')  // Mengambil dari model Jabatan, menampilkan nama_jabatan
                     ->required()
                     ->preload()  // Memuat opsi saat form dibuka (lebih cepat)
-                    ->searchable(),  // Opsional: Tambah pencarian jika jabatan banyak
-
+                    ->searchable()  // Opsional: Tambah pencarian jika jabatan banyak
+->reactive()
+    ->afterStateUpdated(function ($state, callable $set) {
+        $gaji = \App\Models\Jabatan::find($state)?->gaji_pokok;
+        $set('gaji_pokok', $gaji ?? 0);
+    }),
                 Forms\Components\Radio::make('gender')
                     ->label('Jenis Kelamin')
                     ->options([
@@ -49,6 +52,14 @@ class PegawaiResource extends Resource
                         'Wanita' => 'Wanita',
                     ])
                     ->required(),
+
+                Forms\Components\TextInput::make('gaji_pokok')
+    ->label('Gaji Pokok')
+    ->numeric()
+    ->readOnly()   // tidak boleh diedit
+                    ->prefix('Rp')  // Opsional: Tambah prefix untuk mata uang
+ ->dehydrated(true)
+    ->default(0),
             ]);
     }
 
@@ -58,8 +69,9 @@ class PegawaiResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('nip')->label('NIP'),
                 Tables\Columns\TextColumn::make('nama')->label('Nama Lengkap'),
-                Tables\Columns\TextColumn::make('jabatan')->label('Jabatan'),
+                Tables\Columns\TextColumn::make('jabatan.nama_jabatan')->label('Jabatan'),
                 Tables\Columns\TextColumn::make('gender')->label('Jenis Kelamin'),
+                Tables\Columns\TextColumn::make('gaji_pokok')->label('Gaji Pokok')->money('idr', true),
             ]);
     }
 

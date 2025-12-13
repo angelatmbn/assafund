@@ -4,31 +4,34 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\KomponenBiayaDaftar;
+use App\Models\Siswa;
 
 class Pendaftaran extends Model
 {
-    use HasFactory;
-
-    // Jika nama tabel bukan jamak, tambahkan properti $table
     protected $table = 'pendaftaran';
 
-    // Kolom yang dapat diisi (fillable)
     protected $fillable = [
         'siswa',
+        'komponen_biaya', // isi: id_komponen
         'nominal',
         'jumlah_bayar',
         'kelas',
-        'tanggal'
+        'tanggal',
     ];
 
-    // Kalau kolom 'tanggal' mau otomatis di-cast ke Carbon
-    protected $casts = [
-        'tanggal' => 'date',
-    ];
+    public function KomponenBiayaDaftar()
+    {
+        return $this->belongsTo(
+            KomponenBiayaDaftar::class,
+            'komponen_biaya',   // FK di pendaftaran
+            'id_komponen',      // kolom unik di master
+        );
+    }
 
-    public function siswa()
-{
-    return $this->belongsTo(Siswa::class);  // Asumsi foreign key adalah 'siswa_id'
-}
-
+        public function siswa()
+    {
+        // kolom di tabel pendaftaran: siswa_id (bukan 'siswa')
+        return $this->belongsTo(Siswa::class);
+    }
 }

@@ -11,7 +11,7 @@ class Pegawai extends Model
     use HasFactory;
     protected $table = 'pegawai';  // Nama tabel eksplisit
     protected $guarded = [];
-    protected $fillable = ['nip', 'nama', 'jabatan_id', 'gender'];
+    protected $fillable = ['nip', 'nama', 'jabatan_id', 'gender', 'gaji_pokok'];
     // Relationship ke Jabatan (pastikan model Jabatan ada)
     public function jabatan()
     {

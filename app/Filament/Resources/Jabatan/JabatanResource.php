@@ -38,7 +38,7 @@ class JabatanResource extends Resource
                     ->label('Gaji Pokok')
                     ->required()
                     ->numeric()  // Asumsikan gaji adalah angka
-                    ->prefix('Rp'),  // Opsional: Tambah prefix untuk mata uang
+                    ->prefix('Rp')  // Opsional: Tambah prefix untuk mata uang
             ]);
     }
 
