@@ -46,4 +46,12 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
+
+    // app/Models/User.php
+public function pegawai()
+{
+    return $this->belongsTo(Pegawai::class, 'pegawai_id', 'id');
+}
+
+
 }

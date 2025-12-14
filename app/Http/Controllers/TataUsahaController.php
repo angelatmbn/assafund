@@ -14,7 +14,11 @@ use App\Models\Jabatan;
 use App\Models\Coa;        // sesuaikan nama model
 use App\Models\KomponenBiayaDaftar;
 use Carbon\Carbon;
-
+use App\Models\Jurnal;
+use App\Models\JurnalDetail;
+use App\Services\AIJurnalService;
+use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 
 class TataUsahaController extends Controller
@@ -62,11 +66,54 @@ $sppPerBulan = PembayaranSPP::selectRaw(
 // =======================
 // PENGGAJIAN
 // =======================
+
+public function slipGaji(Gaji $gaji)
+{
+    $gaji->load('pegawai.jabatan');
+
+    return view('tatausaha.gaji.slip', compact('gaji'));
+}
+
 public function indexGaji()
 {
     $gajis = Gaji::with('pegawai')->latest()->get();
 
     return view('tatausaha.gaji.index', compact('gajis'));
+}
+
+public function hitungGaji(Request $request)
+{
+    $pegawaiId = $request->query('pegawai');
+    $tahun     = $request->query('tahun');
+    $bulan     = $request->query('bulan');
+
+    if (! $pegawaiId || ! $tahun || ! $bulan) {
+        return response()->json([
+            'jumlah_hadir'     => 0,
+            'tunjangan_total'  => 0,
+            'total_gaji'       => 0,
+        ]);
+    }
+
+    $jumlahHadir = Gaji::hitungJumlahHadir($pegawaiId, $tahun, $bulan);
+
+    $pegawai   = Pegawai::with('jabatan')->find($pegawaiId);
+    $gajiPokok = (float) ($pegawai->gaji_pokok ?? $pegawai->jabatan->gaji_pokok ?? 0);
+
+    $hariKerja      = 25;
+    $gajiPerHari    = $gajiPokok / $hariKerja;
+    $gajiPokokTotal = $jumlahHadir * $gajiPerHari;
+
+    // kalau mau pakai komponen gaji, bisa hitung lagi dari tabel lain
+    $tunjanganTotal = 0;
+
+    $totalAkhir = $gajiPokokTotal + $tunjanganTotal;
+
+    return response()->json([
+        'jumlah_hadir'     => $jumlahHadir,
+        'tunjangan_total'  => $tunjanganTotal,
+        'total_gaji'       => round($totalAkhir, 2),
+    ]);
 }
 
 // form create
@@ -123,22 +170,28 @@ public function storeGaji(Request $request)
     }
 
     // 5. total gaji proporsional: gaji_pokok * (hadir / hari_kerja)
-    if ($jumlahHariKerja === 0) {
-        $totalGaji = 0;
-    } else {
-        $totalGaji = round($pegawai->gaji_pokok * ($jumlahHadir / $jumlahHariKerja));
-    }
+// 5. total gaji proporsional
+if ($jumlahHariKerja === 0) {
+    $gajiPokokTotal = 0;
+} else {
+    $gajiPokokTotal = round($pegawai->gaji_pokok * ($jumlahHadir / $jumlahHariKerja));
+}
 
-    // 6. simpan
-    Gaji::create([
-        'no_faktur'    => $data['no_faktur'],
-        'id_pegawai'   => $pegawai->id,
-        'tahun_gaji'   => $data['tahun_gaji'],
-        'bulan_gaji'   => $data['bulan_gaji'],
-        'tgl_gaji'     => $data['tgl_gaji'],
-        'jumlah_hadir' => $jumlahHadir,
-        'total_gaji'   => $totalGaji,
-    ]);
+// ambil tunjangan dari pegawai (atau nanti dari form)
+$tunjanganTotal = (float) ($pegawai->tunjangan ?? 0);
+
+// 6. simpan
+Gaji::create([
+    'no_faktur'       => $data['no_faktur'],
+    'id_pegawai'      => $pegawai->id,
+    'tahun_gaji'      => $data['tahun_gaji'],
+    'bulan_gaji'      => $data['bulan_gaji'],
+    'tgl_gaji'        => $data['tgl_gaji'],
+    'jumlah_hadir'    => $jumlahHadir,
+    'gaji_pokok'      => $gajiPokokTotal,
+    'tunjangan_total' => $tunjanganTotal,
+    'total_gaji'      => $gajiPokokTotal + $tunjanganTotal,
+]);
 
     return redirect()->route('tatausaha.gaji.index')->with('success', 'Data gaji tersimpan.');
 }
@@ -189,21 +242,26 @@ public function updateGaji(Request $request, Gaji $gaji)
         }
     }
 
-    if ($jumlahHariKerja === 0) {
-        $totalGaji = 0;
-    } else {
-        $totalGaji = round($pegawai->gaji_pokok * ($jumlahHadir / $jumlahHariKerja));
-    }
+if ($jumlahHariKerja === 0) {
+    $gajiPokokTotal = 0;
+} else {
+    $gajiPokokTotal = round($pegawai->gaji_pokok * ($jumlahHadir / $jumlahHariKerja));
+}
 
-    $gaji->update([
-        'no_faktur'    => $data['no_faktur'],
-        'id_pegawai'   => $pegawai->id,
-        'tahun_gaji'   => $data['tahun_gaji'],
-        'bulan_gaji'   => $data['bulan_gaji'],
-        'tgl_gaji'     => $data['tgl_gaji'],
-        'jumlah_hadir' => $jumlahHadir,
-        'total_gaji'   => $totalGaji,
-    ]);
+$tunjanganTotal = (float) ($pegawai->tunjangan ?? 0);
+
+$gaji->update([
+    'no_faktur'       => $data['no_faktur'],
+    'id_pegawai'      => $pegawai->id,
+    'tahun_gaji'      => $data['tahun_gaji'],
+    'bulan_gaji'      => $data['bulan_gaji'],
+    'tgl_gaji'        => $data['tgl_gaji'],
+    'jumlah_hadir'    => $jumlahHadir,
+    'gaji_pokok'      => $gajiPokokTotal,
+    'tunjangan_total' => $tunjanganTotal,
+    'total_gaji'      => $gajiPokokTotal + $tunjanganTotal,
+]);
+
 
     return redirect()->route('tatausaha.gaji.index')->with('success', 'Data gaji diperbarui.');
 }
@@ -236,17 +294,17 @@ public function createSpp()
 public function storeSpp(Request $request)
 {
     $data = $request->validate([
-        'siswa_id'    => 'required|exists:siswa,id',
-        'Kelas'       => 'required|string|max:255',
-        'komponen_id' => 'required|exists:komponen_biaya_daftar,id',
-        'nominal'     => 'required|numeric',
-        'tanggal'     => 'required|date',
+        'nis'           => 'required|exists:siswa,nis',
+        'bulan'         => 'required|string|max:20',
+        'tahun'         => 'required|string|max:4',
+        'tanggal_bayar' => 'required|date',
+        'biaya_pokok'   => 'required|integer',
     ]);
 
-    Pendaftaran::create($data);
+    PembayaranSPP::create($data);
 
-
-    return redirect()->route('tatausaha.spp.index')->with('success', 'Pembayaran SPP tersimpan.');
+    return redirect()->route('tatausaha.spp.index')
+        ->with('success', 'Pembayaran SPP tersimpan.');
 }
 
 public function editSpp(PembayaranSPP $spp)
@@ -281,42 +339,82 @@ public function destroySpp(PembayaranSPP $spp)
     // =======================
     // PENDAFTARAN
     // =======================
-public function indexPendaftaran()
-{
-     $pendaftarans = Pendaftaran::with(['siswaRef', 'komponenRef'])->latest()->get();
 
-    return view('tatausaha.pendaftaran.index', compact('pendaftarans'));
-}
+       public function indexPendaftaran()
+    {
+        $pendaftarans = Pendaftaran::with(['siswaRef','komponenRef'])
+            ->orderByDesc('tanggal')
+            ->get();
 
-// FORM CREATE
-public function createPendaftaran()
-{
-    $siswa     = Siswa::orderBy('nama_lengkap')->get();
-    $komponens = KomponenBiayaDaftar::orderBy('nama_komponen')->get();
+        return view('tatausaha.pendaftaran.index', compact('pendaftarans'));
+    }
 
-    return view('tatausaha.pendaftaran.create', compact('siswa', 'komponens'));
-}
+    public function createPendaftaran()
+    {
+        $siswa     = Siswa::orderBy('nama_lengkap')->get();
+        $komponens  = KomponenBiayaDaftar::orderBy('nama_komponen')->get();
 
-// SIMPAN
-public function storePendaftaran(Request $request)
+        return view('tatausaha.pendaftaran.create', compact('siswa','komponens'));
+    }
+
+public function storePendaftaran(Request $request, AIJurnalService $ai)
 {
     $data = $request->validate([
-        'siswa'          => 'required',      // atau 'siswa_id' kalau pakai nama itu
-        'Kelas'          => 'required|string|max:255',
-        'komponen_biaya' => 'required',
+        'siswa'          => 'required|integer',
+        'Kelas'          => 'required|string',
+        'komponen_biaya' => 'required|string',
         'nominal'        => 'required|numeric',
         'tanggal'        => 'required|date',
     ]);
 
-    Pendaftaran::create($data);
+    $pendaftaran = Pendaftaran::create($data);
 
-    // redirect ke halaman index pendaftaran (GET)
+    // 1) Coba pakai AI (kalau rate limit, dia hanya log dan tidak melempar error)
+    $ai->generateAndSave([
+        'jenis'          => 'pendaftaran',
+        'id_sumber'      => $pendaftaran->id,
+        'tanggal'        => $pendaftaran->tanggal,
+        'nominal'        => $pendaftaran->nominal,
+        'siswa'          => $pendaftaran->siswaRef->nama_lengkap ?? null,
+        'komponen_biaya' => $pendaftaran->komponen_biaya,
+        'keterangan'     => 'Pendaftaran '.$pendaftaran->komponen_biaya,
+        'coa_list'       => $this->ambilDaftarAkun(),
+    ]);
+
+    // 2) Fallback rule-based: selalu buat jurnal jika belum ada
+    DB::transaction(function () use ($pendaftaran) {
+        $jurnal = Jurnal::create([
+            'tgl'          => $pendaftaran->tanggal,
+            'no_referensi' => 'PENDAFTARAN-'.$pendaftaran->id,
+            'deskripsi'    => 'Pendaftaran '.$pendaftaran->komponen_biaya,
+        ]);
+
+        // sesuaikan nomor akun dengan COA-mu
+        $akunKas              = 101;
+        $akunPendapatanDaftar = 401;
+
+        JurnalDetail::create([
+            'jurnal_id' => $jurnal->id,
+            'no_akun'   => $akunKas,
+            'deskripsi' => 'Kas - Pendaftaran',
+            'debit'     => $pendaftaran->nominal,
+            'credit'    => 0,
+        ]);
+
+        JurnalDetail::create([
+            'jurnal_id' => $jurnal->id,
+            'no_akun'   => $akunPendapatanDaftar,
+            'deskripsi' => 'Pendapatan Pendaftaran',
+            'debit'     => 0,
+            'credit'    => $pendaftaran->nominal,
+        ]);
+    });
+
     return redirect()
         ->route('tatausaha.pendaftaran.index')
-        ->with('success', 'Data pendaftaran tersimpan.');
+        ->with('success', 'Pendaftaran & jurnal tersimpan.');
 }
 
-// FORM EDIT
 public function editPendaftaran(Pendaftaran $pendaftaran)
 {
     $siswa     = Siswa::orderBy('nama_lengkap')->get();
@@ -325,30 +423,35 @@ public function editPendaftaran(Pendaftaran $pendaftaran)
     return view('tatausaha.pendaftaran.edit', compact('pendaftaran', 'siswa', 'komponens'));
 }
 
-// UPDATE
 public function updatePendaftaran(Request $request, Pendaftaran $pendaftaran)
 {
+    \Log::info('updatePendaftaran dipanggil', ['id' => $pendaftaran->id]);
+
     $data = $request->validate([
-        'siswa'          => 'required|string|max:255',
-        'Kelas'          => 'required|string|max:255',
-        'komponen_biaya' => 'required|string|max:255',
+        'siswa'          => 'required|integer',
+        'Kelas'          => 'required|string',
+        'komponen_biaya' => 'required|string',
         'nominal'        => 'required|numeric',
         'tanggal'        => 'required|date',
     ]);
 
     $pendaftaran->update($data);
 
-    return redirect()->route('tatausaha.pendaftaran.index')
-        ->with('success', 'Data pendaftaran diperbarui.');
+    return redirect()
+        ->route('tatausaha.pendaftaran.index')
+        ->with('success', 'Pendaftaran diperbarui.');
 }
 
-// HAPUS
 public function destroyPendaftaran(Pendaftaran $pendaftaran)
 {
+    // opsional: hapus juga jurnal yang terkait kalau ada relasi no_referensi
+    Jurnal::where('no_referensi', 'PENDAFTARAN-'.$pendaftaran->id)->delete();
+
     $pendaftaran->delete();
 
-    return redirect()->route('tatausaha.pendaftaran.index')
-        ->with('success', 'Data pendaftaran dihapus.');
+    return redirect()
+        ->route('tatausaha.pendaftaran.index')
+        ->with('success', 'Pendaftaran dihapus.');
 }
 
     // =======================
@@ -613,4 +716,51 @@ public function destroyPresensi(Presensi $presensi)
     return redirect()->route('tatausaha.presensi.index')
         ->with('success', 'Presensi dihapus.');
 }
+public function indexGajiGuru()
+{
+    $pegawai = auth()->user()->pegawai;
+
+    if (!$pegawai) {
+        $gajis = collect(); // kosong kalau akun belum di-link ke pegawai
+        return view('guru.gaji.index', compact('gajis'));
+    }
+
+    $gajis = Gaji::with('pegawai.jabatan')
+        ->where('pegawai_id', $pegawai->id)
+        ->orderByDesc('tgl_gaji')
+        ->get();
+
+    return view('guru.gaji.index', compact('gajis'));
 }
+
+public function indexGajiKebersihan()
+{
+    $pegawai = Auth::user()->pegawai;
+
+    if (!$pegawai) {
+        // kalau akun belum dikaitkan dengan pegawai, tampilkan tabel kosong
+        $gajis = collect();
+        return view('kebersihan.gaji.index', compact('gajis'));
+    }
+
+    $gajis = Gaji::with('pegawai.jabatan')
+        ->where('pegawai_id', $pegawai->id)
+        ->orderByDesc('tgl_gaji')
+        ->get();
+
+    return view('kebersihan.gaji.index', compact('gajis'));
+}
+
+    public function slipGajiGuru(Gaji $gaji)
+    {
+        $gaji->load('pegawai.jabatan');
+        return view('guru.gaji.slip', compact('gaji'));
+    }
+
+    public function slipGajiKebersihan(Gaji $gaji)
+    {
+        $gaji->load('pegawai.jabatan');
+        return view('kebersihan.gaji.slip', compact('gaji'));
+    }
+}
+

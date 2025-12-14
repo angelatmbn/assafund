@@ -10,38 +10,44 @@
 
         <div class="mb-3">
             <label class="form-label">Siswa</label>
-            <select name="nis" class="form-select">
-                    @foreach($siswa as $s)
-                        <option value="{{ $s->nis }}">{{ $s->nis }} - {{ $s->nama_lengkap }}</option>
-                    @endforeach
+            <select name="nis" class="form-select" required>
+                @foreach($siswa as $s)
+                    <option value="{{ $s->nis }}">
+                        {{ $s->nis }} - {{ $s->nama_lengkap }}
+                    </option>
+                @endforeach
             </select>
         </div>
 
         <div class="row">
             <div class="col-md-4 mb-3">
-                <label class="form-label">Tanggal</label>
+                <label class="form-label">Tanggal Bayar</label>
                 <input type="date" name="tanggal_bayar" class="form-control"
-                       value="{{ old('tanggal_bayar', now()->toDateString()) }}">
+                       value="{{ old('tanggal_bayar', now()->toDateString()) }}" required>
             </div>
+
             <div class="col-md-4 mb-3">
                 <label class="form-label">Bulan</label>
-                <select name="bulan" class="form-select">
+                <select name="bulan" class="form-select" required>
                     @foreach(['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'] as $b)
-                        <option value="{{ $b }}">{{ $b }}</option>
+                        <option value="{{ $b }}" {{ old('bulan') == $b ? 'selected' : '' }}>
+                            {{ $b }}
+                        </option>
                     @endforeach
                 </select>
             </div>
+
             <div class="col-md-4 mb-3">
-                <label class="form-label">Tanggal Bayar</label>
-                <input type="number" name="tanggal_bayar" class="form-control"
-                       value="{{ old('tanggal_bayar') }}" placeholder="Masukan Tanggal Bayar">
+                <label class="form-label">Tahun</label>
+                <input type="number" name="tahun" class="form-control"
+                       value="{{ old('tahun', now()->year) }}" required>
             </div>
         </div>
 
         <div class="mb-3">
             <label class="form-label">Biaya Pokok</label>
-            <input type="text" name="biaya_pokok" class="form-control"
-                   value="{{ old('biaya_pokok') }}" placeholder="Masukan Biaya Pokok">
+            <input type="number" name="biaya_pokok" class="form-control"
+                   value="{{ old('biaya_pokok') }}" required placeholder="Masukan Biaya Pokok">
         </div>
 
         <button type="submit" class="btn btn-primary">Simpan Pembayaran</button>

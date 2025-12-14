@@ -45,7 +45,8 @@ class Gaji extends Model
         'no_faktur',
         'tahun_gaji',
         'bulan_gaji',
-        'tanggal_pembayaran',
+        'tanggal_gaji',
+        'tunjangan_total',
         'jumlah_hadir',
         'total_gaji',
     ];
@@ -125,7 +126,7 @@ class Gaji extends Model
             ->count();
     }
 
-     public static function hitungTotalGaji(float $gajiPokok, int $jumlahHadir, float $tunjanganPokok, float $potonganLain): float
+     public static function hitungTotalGaji(float $gajiPokok, int $jumlahHadir, float $tunjanganPokok, ): float
     {
         $hariKerjaPerBulan = 25; // Asumsi hari kerja standar
         
@@ -140,7 +141,7 @@ class Gaji extends Model
         $gajiBerbasisHadir = $gajiHarian * $jumlahHadir;
         
         // 3. Hitung Total Akhir
-        $totalGaji = $gajiBerbasisHadir + $tunjanganPokok - $potonganLain;
+        $totalGaji = $gajiBerbasisHadir + $tunjanganPokok;
         
         // Pastikan total gaji tidak minus
         return max(0, $totalGaji); 

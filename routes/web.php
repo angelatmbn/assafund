@@ -65,8 +65,6 @@ use App\Http\Controllers\TataUsahaController;
 Route::middleware('auth')->prefix('tatausaha')->name('tatausaha.')->group(function () {
     Route::get('/', [TataUsahaController::class, 'dashboard'])->name('dashboard');
 
-    // ...
-
     // Penggajian CRUD
     Route::get('gaji', [TataUsahaController::class, 'indexGaji'])->name('gaji.index');
     Route::get('gaji/create', [TataUsahaController::class, 'createGaji'])->name('gaji.create');
@@ -75,6 +73,13 @@ Route::middleware('auth')->prefix('tatausaha')->name('tatausaha.')->group(functi
     Route::put('gaji/{gaji}', [TataUsahaController::class, 'updateGaji'])->name('gaji.update');
     Route::delete('gaji/{gaji}', [TataUsahaController::class, 'destroyGaji'])->name('gaji.destroy');
 
+    // HANYA INI untuk hitung & slip – TANPA /tatausaha di depan dan TANPA prefix nama lagi
+    Route::get('gaji/hitung', [TataUsahaController::class, 'hitungGaji'])
+        ->name('gaji.hitung');
+    Route::get('gaji/{gaji}/slip', [TataUsahaController::class, 'slipGaji'])
+        ->name('gaji.slip');
+
+    // ... route tatausaha lain ...
 
     Route::get('spp', [TataUsahaController::class, 'indexSpp'])->name('spp.index');
     Route::get('spp/create', [TataUsahaController::class, 'createSpp'])->name('spp.create');
@@ -136,6 +141,31 @@ Route::middleware(['auth'])->prefix('tatausaha')->name('tatausaha.')->group(func
     Route::put('/presensi/{presensi}', [TataUsahaController::class, 'updatePresensi'])->name('presensi.update');
     Route::delete('/presensi/{presensi}', [TataUsahaController::class, 'destroyPresensi'])->name('presensi.destroy');
 });
+
+Route::middleware(['auth'])->prefix('tatausaha')->name('tatausaha.')->group(function () {
+    // ... route lain
+
+    Route::get('/jurnal', [\App\Http\Controllers\JurnalController::class, 'index'])
+        ->name('jurnal.index');
+    Route::get('/jurnal/create', [\App\Http\Controllers\JurnalController::class, 'create'])
+        ->name('jurnal.create');
+    Route::post('/jurnal', [\App\Http\Controllers\JurnalController::class, 'store'])
+        ->name('jurnal.store');
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/guru/gaji', [TataUsahaController::class, 'indexGajiGuru'])
+        ->name('guru.gaji.index');
+    Route::get('/guru/gaji/{gaji}/slip', [TataUsahaController::class, 'slipGajiGuru'])
+        ->name('guru.gaji.slip');
+
+    Route::get('/kebersihan/gaji', [TataUsahaController::class, 'indexGajiKebersihan'])
+        ->name('kebersihan.gaji.index');
+    Route::get('/kebersihan/gaji/{gaji}/slip', [TataUsahaController::class, 'slipGajiKebersihan'])
+        ->name('kebersihan.gaji.slip');
+});
+
+
 
 
 

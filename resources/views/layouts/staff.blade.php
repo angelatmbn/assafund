@@ -70,6 +70,24 @@
             border-color: #007a34;
         }
 
+        .nav-pills .nav-link {
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 14px;
+    color: #374151;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.nav-pills .nav-link:hover {
+    background-color: #c7f0d6; /* hijau muda */
+    color: #006b2c;           /* teks hijau lebih gelap */
+}
+
+.nav-pills .nav-link.active {
+    background-color: #00933F;
+    color: #ffffff;
+}
+
 
         @media (max-width: 960px) {
             body { padding: 12px; }
@@ -104,6 +122,13 @@
                     Presensi
                 </a>
             </li>
+            <li class="nav-item">
+    <a href="{{ route('kebersihan.gaji.index') }}"
+       class="nav-link {{ request()->routeIs('kebersihan.gaji.*') ? 'active' : '' }}">
+        Penggajian
+    </a>
+</li>
+
         </ul>
     </aside>
 

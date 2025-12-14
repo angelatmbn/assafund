@@ -103,19 +103,21 @@
 <script>
 document.addEventListener('DOMContentLoaded', () => {
     // data dari PHP -> JS
-    const gajiData = @json($gajiPerBulan);
-    const sppData  = @json($sppPerBulan);
+const gajiData = @json($gajiPerBulan);
+const sppData  = @json($sppPerBulan);
 
-    const labels = gajiData.map(row => row.bulan);
+const labels = gajiData.length
+    ? gajiData.map(row => row.bulan)
+    : sppData.map(row => row.bulan); // kalau gaji kosong tapi SPP ada
 
-    const mapByBulan = (rows) => {
-        const map = {};
-        rows.forEach(r => map[r.bulan] = r.total);
-        return labels.map(b => map[b] ?? 0);
-    };
+const mapByBulan = (rows) => {
+    const map = {};
+    rows.forEach(r => map[r.bulan] = Number(r.total || 0));
+    return labels.map(b => map[b] ?? 0);
+};
 
-    const gajiTotals = mapByBulan(gajiData);
-    const sppTotals  = mapByBulan(sppData);
+const gajiTotals = mapByBulan(gajiData);
+const sppTotals  = mapByBulan(sppData);
 
     // line/area chart gaji & SPP
     const ctx1 = document.getElementById('chart-gaji-spp').getContext('2d');

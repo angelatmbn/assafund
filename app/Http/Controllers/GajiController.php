@@ -2,65 +2,33 @@
 
 namespace App\Http\Controllers;
 
-use App\Http\Requests\StoreGajiRequest;
-use App\Http\Requests\UpdateGajiRequest;
 use App\Models\Gaji;
 
 class GajiController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
+    public function slipGaji(Gaji $gaji)
     {
-        //
-    }
+        // load relasi
+        $gaji->load('pegawai.jabatan', 'komponenGaji');
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
+        // gaji pokok
+        $gajiPokok = (float) ($gaji->gaji_pokok ?? 0);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(StoreGajiRequest $request)
-    {
-        //
-    }
+        // hitung tunjangan & potongan dari komponen_gaji
+        $tunjangan = $gaji->komponenGaji
+            ->where('jenis', 'tunjangan')
+            ->sum('nominal');
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(Gaji $gaji)
-    {
-        //
-    }
+        // total gaji
+        $totalGaji = $gajiPokok + $tunjangan;
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(Gaji $gaji)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(UpdateGajiRequest $request, Gaji $gaji)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Gaji $gaji)
-    {
-        //
+        // kirim ke view
+        return view('gaji.slip-gaji', [
+            'gaji'       => $gaji,
+            'pegawai'    => $gaji->pegawai,
+            'gajiPokok'  => $gajiPokok,
+            'tunjangan'  => $tunjangan,
+            'totalGaji'  => $totalGaji,
+        ]);
     }
 }

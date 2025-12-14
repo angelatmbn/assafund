@@ -12,14 +12,14 @@
 
         <div class="mb-3">
             <label class="form-label">Nama Siswa & Kelas</label>
-            <select name="siswa" class="form-select" id="select-siswa" required>
-                @foreach($siswa as $s)
-                    <option value="{{ $s->nama_lengkap }}"
-                        {{ old('siswa', $pendaftaran->siswa) == $s->nama_lengkap ? 'selected' : '' }}>
-                        {{ $s->nama_lengkap }} - {{ $s->kelas }}
-                    </option>
-                @endforeach
-            </select>
+        <select name="siswa" class="form-select" id="select-siswa" required>
+            @foreach($siswa as $s)
+                <option value="{{ $s->id }}"
+                    {{ (int)old('siswa', $pendaftaran->siswa) === $s->id ? 'selected' : '' }}>
+                    {{ $s->nama_lengkap }} - {{ $s->kelas }}
+                </option>
+            @endforeach
+        </select>
         </div>
 
         <div class="mb-3">
@@ -62,7 +62,7 @@
 
             const mapKelas = {
                 @foreach($siswa as $s)
-                "{{ $s->nama_lengkap }}": "{{ $s->kelas }}",
+                "{{ $s->id }}": "{{ $s->kelas }}",
                 @endforeach
             };
 
