@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Coas\Tables;
+namespace App\Filament\Resources\Coa\Tables;
 
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;

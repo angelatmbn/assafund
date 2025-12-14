@@ -8,15 +8,21 @@ use Illuminate\Support\Facades\DB;
 
 class Pegawai extends Model
 {
-    use HasFactory;
-    protected $table = 'pegawai';  // Nama tabel eksplisit
-    protected $guarded = [];
-    protected $fillable = ['nip', 'nama', 'jabatan_id', 'gender', 'gaji_pokok'];
-    // Relationship ke Jabatan (pastikan model Jabatan ada)
+    protected $table = 'pegawai';
+
+    protected $fillable = [
+        'nip',
+        'nama',
+        'jabatan_id',
+        'gender',
+        'gaji_pokok',
+    ];
+
     public function jabatan()
     {
-        return $this->belongsTo(Jabatan::class, 'jabatan_id', 'id');  // Eksplisit: foreign_key, owner_key
+        return $this->belongsTo(Jabatan::class, 'jabatan_id', 'id');
     }
+
 
     // Generate NIP otomatis dengan awalan 'PG' dan 3 digit angka terakhir, mirip pola Barang2
     public static function getNipBaru()

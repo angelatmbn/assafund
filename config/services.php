@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'ai_reports' => [
+    'api_key'  => env('AI_REPORTS_API_KEY'),
+    'endpoint' => env('AI_REPORTS_ENDPOINT', 'https://api.your-llm.com/v1/chat/completions'),
+    'model'    => env('AI_REPORTS_MODEL', 'gpt-4o-mini'),
+],
+
+
 ];

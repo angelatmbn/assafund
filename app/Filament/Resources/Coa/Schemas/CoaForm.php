@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Resources\Coas\Schemas;
+namespace App\Filament\Resources\Coa\Schemas;
 
 use Filament\Schemas\Schema;
 

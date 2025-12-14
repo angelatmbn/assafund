@@ -12,26 +12,23 @@ class Pendaftaran extends Model
     protected $table = 'pendaftaran';
 
     protected $fillable = [
-        'siswa',
-        'komponen_biaya', // isi: id_komponen
+        'siswa',          // berisi NIS atau id siswa
         'nominal',
-        'jumlah_bayar',
-        'kelas',
+        'komponen_biaya', // berisi id_komponen seperti KMP-001
+        'Kelas',
         'tanggal',
     ];
 
-    public function KomponenBiayaDaftar()
+    public function siswaRef()
     {
-        return $this->belongsTo(
-            KomponenBiayaDaftar::class,
-            'komponen_biaya',   // FK di pendaftaran
-            'id_komponen',      // kolom unik di master
-        );
+        // kolom pendaftaran.siswa menyimpan ID siswa (1,2,3..)
+        return $this->belongsTo(Siswa::class, 'siswa', 'id');
     }
 
-        public function siswa()
+    public function komponenRef()
     {
-        // kolom di tabel pendaftaran: siswa_id (bukan 'siswa')
-        return $this->belongsTo(Siswa::class);
+        // pendaftaran.komponen_biaya menyimpan id_komponen (KMP-001),
+        // hubungkan ke komponen_biaya_daftar.id_komponen
+        return $this->belongsTo(KomponenBiayaDaftar::class, 'komponen_biaya', 'id_komponen');
     }
 }

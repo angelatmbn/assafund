@@ -3,100 +3,138 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-
-// tambahan untuk proses authentikasi
 use Illuminate\Support\Facades\Auth;
-use App\Models\User; //untuk akses kelas model user
-
-// untuk bisa menggunakan hash
 use Illuminate\Support\Facades\Hash;
+
+use App\Models\User;
 use App\Models\Jabatan;
+use App\Models\Pegawai;
+use Illuminate\Support\Facades\DB;
 
 class AuthController extends Controller
 {
-    // method untuk menampilkan halaman awal login
+    // Halaman login
     public function showLoginForm()
     {
         return view('login');
     }
 
-    // menampilkan halaman daftar
-public function showRegisterForm()
-{
-    $jabatans = Jabatan::orderBy('nama_jabatan')->get(); // panggil model di sini
-    return view('register', compact('jabatans'));
-}
+    // Halaman register
+    public function showRegisterForm()
+    {
+        $jabatans = Jabatan::orderBy('nama_jabatan')->get();
 
-// proses daftar user baru
-public function register(Request $request)
-{
-    $validated = $request->validate([
-        'name'       => ['required', 'string', 'max:255'],
-        'email'      => ['required', 'email', 'max:255', 'unique:users,email'],
-        'user_group' => ['required', 'string'], // bisa tambahkan rule in:admin,customer,dll
-        'password'   => ['required', 'string', 'min:6', 'confirmed'],
-    ]);
-
-    $user = User::create([
-        'name'       => $validated['name'],
-        'email'      => $validated['email'],
-        'password'   => Hash::make($validated['password']),
-        'user_group' => $validated['user_group'], // langsung dari select
-    ]);
-
-    Auth::login($user);
-    return redirect('/depan');
-}
-
-    // proses validasi data login
-    public function login(Request $request)
-{
-    $credentials = $request->validate([
-        'email' => 'required|email',
-        'password' => 'required|min:6',
-    ]);
-
-    if (Auth::attempt(['email' => $request->email, 'password' => $request->password])) {
-        $request->session()->regenerate();
-
-        $user = Auth::user();
-
-        if ($user->user_group === 'admin') {
-            return redirect('/admin'); // halaman admin
-        } elseif ($user->user_group === 'pegawai') {
-            return redirect('/depan'); // halaman customer
-        } else {
-            Auth::logout(); // kalau user_group tidak dikenal
-            return redirect('/login')->withErrors(['user_group' => 'Role tidak dikenal.']);
-        }
+        return view('register', compact('jabatans'));
     }
 
-    return back()->withErrors([
-        'email' => 'Email atau password salah.',
-    ]);
-}
+    // Proses register (tanpa auto-login)
+    public function register(Request $request)
+    {
+        $validated = $request->validate([
+            'name'       => ['required', 'string', 'max:255'],
+            'email'      => ['required', 'email', 'max:255', 'unique:users,email'],
+            'password'   => ['required', 'string', 'min:6', 'confirmed'],
 
+            'nip'        => ['nullable', 'string', 'max:11'],
+            'jabatan_id' => ['nullable', 'integer', 'exists:jabatans,id'],
+            'gender'     => ['required', 'string', 'in:Laki-laki,Perempuan'],
+        ]);
 
-    // method untuk menangani logout
+        DB::transaction(function () use ($validated) {
+
+            // ambil data jabatan (boleh null)
+            $jabatan = null;
+            if (!empty($validated['jabatan_id'])) {
+                $jabatan = Jabatan::find($validated['jabatan_id']);
+            }
+
+            // user_group diisi nama jabatan (atau 'pegawai' default kalau kosong)
+            $userGroup = $jabatan?->nama_jabatan ?? 'pegawai';
+
+            // 1. buat user
+            $user = User::create([
+                'name'       => $validated['name'],
+                'email'      => $validated['email'],
+                'password'   => Hash::make($validated['password']),
+                'user_group' => $userGroup,
+            ]);
+
+            // gaji pokok diambil dari jabatan (kalau ada), else 0
+            $gajiPokok = $jabatan?->gaji_pokok ?? 0;
+
+            // 2. buat pegawai
+            Pegawai::create([
+                'nip'        => $validated['nip'] ?? null,
+                'nama'       => $validated['name'],
+                'jabatan_id' => $validated['jabatan_id'] ?? null,
+                'gender'     => $validated['gender'],
+                'gaji_pokok' => $gajiPokok,
+                // kalau nanti kamu tambah kolom user_id di tabel pegawai:
+                // 'user_id'    => $user->id,
+            ]);
+        });
+
+        return redirect()->route('login')
+            ->with('success', 'Registrasi berhasil, silakan login.');
+    }
+
+    // Proses login
+    public function login(Request $request)
+    {
+        $credentials = $request->validate([
+            'email'    => 'required|email',
+            'password' => 'required|min:6',
+        ]);
+
+        if (Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+
+            $user = Auth::user();
+
+            if ($user->user_group === 'admin') {
+                return redirect('/admin');
+            } elseif ($user->user_group === 'Guru') {
+                return redirect('/guru');
+            } elseif ($user->user_group === 'Kepala Sekolah') {
+                return redirect('/kepala-sekolah');
+            } elseif ($user->user_group === 'Kebersihan dan Keamanan') {
+                return redirect('/kebersihan');
+            } elseif ($user->user_group === 'Tata Usaha') {
+                return redirect('/tatausaha');
+            }
+
+            // fallback kalau ada group lain
+            return redirect('/depan');
+        }
+
+        return back()->withErrors([
+            'email' => 'Email atau password salah.',
+        ]);
+    }
+
+    // Logout
     public function logout(Request $request)
     {
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return redirect('/login');
     }
 
-    // ubah password
-    public function ubahpassword(){
+    // Halaman ubah password
+    public function ubahpassword()
+    {
         return view('ubahpassword');
     }
 
-    // ubah password
-    public function prosesubahpassword(Request $request){
-        // echo $request->password ;
+    // Proses ubah password
+    public function prosesubahpassword(Request $request)
+    {
         $request->validate([
             'password' => 'required|string|min:5',
         ]);
+
         $user = Auth::user();
         $user->password = Hash::make($request->password);
         $user->save();

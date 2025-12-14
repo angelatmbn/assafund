@@ -15,7 +15,7 @@ class presensi extends Model
     use HasFactory;
     protected $table = 'presensi';  // Nama tabel eksplisit
     protected $guarded = [];
-    protected $fillable = ['id','id_pegawai', 'tgl_transaksi', 'waktu_masuk', 'waktu_keluar', 'status_presensi'];
+    protected $fillable = ['id','id_pegawai', 'tgl_presensi', 'waktu_masuk', 'waktu_keluar', 'status_presensi'];
     
     public static function getIdPresensi()
         {

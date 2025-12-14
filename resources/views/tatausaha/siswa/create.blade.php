@@ -1,0 +1,47 @@
+@extends('layouts.tatausaha')
+
+@section('title', 'Tambah Siswa')
+
+@section('content')
+    <h3 class="mb-3">Tambah Siswa</h3>
+
+    <form method="POST" action="{{ route('tatausaha.siswa.store') }}" class="card p-4 shadow-sm border-0">
+        @csrf
+
+        <div class="mb-3">
+            <label class="form-label">NIS</label>
+            <input type="text" name="nis" class="form-control"
+                   value="{{ old('nis') }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Nama Lengkap</label>
+            <input type="text" name="nama_lengkap" class="form-control"
+                   value="{{ old('nama_lengkap') }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Kelas</label>
+            <input type="text" name="kelas" class="form-control"
+                   value="{{ old('kelas') }}" required>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select name="status" class="form-select" required>
+                <option value="Aktif" {{ old('status') == 'Aktif' ? 'selected' : '' }}>Aktif</option>
+                <option value="Tidak Aktif" {{ old('status') == 'Tidak Aktif' ? 'selected' : '' }}>Tidak Aktif</option>
+            </select>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Jenis Kelamin</label>
+            <select name="jenis_kelamin" class="form-select" required>
+                <option value="Laki-laki" {{ old('jenis_kelamin') == 'Laki-laki' ? 'selected' : '' }}>Laki-laki</option>
+                <option value="Perempuan" {{ old('jenis_kelamin') == 'Perempuan' ? 'selected' : '' }}>Perempuan</option>
+            </select>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Simpan Siswa</button>
+    </form>
+@endsection

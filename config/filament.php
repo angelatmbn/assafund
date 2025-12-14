@@ -117,16 +117,24 @@ return [
 
     'system_route_prefix' => 'filament',
 
-        'panels' => [
-        'admin' => [
-            'id' => 'admin',
-            'path' => 'admin',
-
-            'provider' => App\Providers\Filament\AdminPanelProvider::class,
-
-            'theme' => [
-                'path' => resource_path('css/filament/admin/theme.css'),
-            ],
+'panels' => [
+    'admin' => [
+        'id' => 'admin',
+        'path' => 'admin',
+        'provider' => App\Providers\Filament\AdminPanelProvider::class,
+        'theme' => [
+            'path' => resource_path('css/filament/admin/theme.css'),
         ],
     ],
+
+    'guru' => [
+        'id' => 'guru',
+        'path' => 'guru',
+        'provider' => App\Providers\Filament\GuruPanelProvider::class,
+        // kalau mau theme sama, bisa pakai theme yg sama atau beda
+        'theme' => [
+            'path' => resource_path('css/filament/admin/theme.css'),
+        ],
+    ],
+],
 ];

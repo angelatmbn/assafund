@@ -45,6 +45,8 @@ class SiswaResource extends Resource
                     ->options([
                         'Aktif' => 'Aktif',
                         'Tidak Aktif' => 'Tidak Aktif',
+                        'Drop Out' => 'Drop Out',
+                        'Lulus' => 'Lulus',
                     ])
                     ->required(),
                                     Radio::make('jenis_kelamin')
