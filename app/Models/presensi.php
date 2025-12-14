@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use App\Models\Pegawai;
 
-class presensi extends Model
+class Presensi extends Model
 {
     /** @use HasFactory<\Database\Factories\PresensiFactory> */
     use HasFactory;
